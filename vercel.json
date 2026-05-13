@@ -1,19 +1,14 @@
 {
+  "version": 2,
+  "functions": {
+    "backend/api/routes/*.py": {
+      "runtime": "python3.12",
+      "maxDuration": 10
+    }
+  },
   "crons": [
     { "path": "/api/cron/refresh-nav", "schedule": "30 17 ***" },
     { "path": "/api/cron/rebalance-check", "schedule": "0 18 ***" },
     { "path": "/api/cron/refresh-metrics-view", "schedule": "0 19 ***" }
-  ],
-  "functions": {
-    "api/py/*.py": {
-      "runtime": "python3.12",
-      "maxDuration": 10
-    },
-    "app/api/portfolio/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/cron/*.ts": {
-      "maxDuration": 60
-    }
-  }
+  ]
 }
