@@ -25,12 +25,37 @@ export default function FundScreener() {
 
     const run = useCallback(async () => {
         setLoading(true);
-        // Note: In Stage 1, we point this to the basic search API.
-        // In Stage 2, this points to your advanced Supabase /screen endpoint.
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/funds/search?q=Index`); 
-        setResults(await res.json());
-        setLoading(false);
+        try {
+            // Updated to use the selected category instead of hardcoded "Index"
+            const categoryQuery = filters.category ? filters.category[0] : "Large Cap";
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/funds/search?q=${categoryQuery}`); 
+            
+            if (!res.ok) throw new Error("Network response was not ok");
+            
+            const data = await res.json();
+            setResults(data);
+        } catch (error) {
+            console.error("Failing to fetch funds:", error);
+            alert("Connection to backend failed. Please ensure the backend is deployed and running.");
+        } finally {
+            setLoading(false);
+        }
     }, [filters]); 
+
+    // ... (rest of the component)
+
+    {/* Inside your <tbody> */}
+    {results.map((f: any) => (
+        <tr key={f.scheme_code} style={{ borderBottom: "1px solid #eaeaea" }}>
+            <td style={{ padding: 8 }}>
+                <a href={`/fund/${f.scheme_code}`} style={{ color: "#378ADD", textDecoration: "none", fontWeight: 500 }}>
+                    {f.scheme_name}
+                </a>
+            </td>
+            {/* Note: Updated to match Supabase column name 'amc_name' */}
+            <td style={{ padding: 8, color: "gray" }}>{f.amc_name || "N/A"}</td>
+        </tr>
+    ))}
 
     const set = (key: string, val: any) => setFilters((prev: any) => ({ ...prev, [key]: val })); 
 
