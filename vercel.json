@@ -1,14 +1,26 @@
 {
   "version": 2,
-  "functions": {
-    "backend/api/routes/*.py": {
-      "runtime": "python3.12",
-      "maxDuration": 10
+  "builds": [
+    {
+      "src": "main.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "15mb", "runtime": "python3.12" }
     }
-  },
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "main.py"
+    }
+  ],
   "crons": [
-    { "path": "/api/cron/refresh-nav", "schedule": "30 17 ***" },
-    { "path": "/api/cron/rebalance-check", "schedule": "0 18 ***" },
-    { "path": "/api/cron/refresh-metrics-view", "schedule": "0 19 ***" }
+    {
+      "path": "/api/v1/cron/refresh-nav",
+      "schedule": "30 17 * * *"
+    },
+    {
+      "path": "/api/v1/cron/rebalance-check",
+      "schedule": "0 18 * * *"
+    }
   ]
 }
