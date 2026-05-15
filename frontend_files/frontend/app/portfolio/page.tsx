@@ -114,7 +114,7 @@ function PortfolioAnalyzer() {
             )}
 
             {/* MPT Optimizer Section */}
-            <MPTOptimizer schemeCodes={codesArray} />
+            <MPTOptimizer selectedFunds={codesArray} />
         </main>
     );
 }
