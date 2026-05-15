@@ -1,112 +1,110 @@
 "use client";
 import { useState, useCallback } from "react";
+import { Check, Plus, ArrowRight, Search, Filter } from "lucide-react";
 
-const CATEGORIES = [
-    "Large Cap Fund", "Mid Cap Fund", "Small Cap Fund",
-    "Flexi Cap Fund", "ELSS", "Debt - Short Duration",
-    "Debt - Liquid", "Hybrid - Aggressive", "Index Fund",
-]; 
-
-const SORT_OPTIONS = [
-    { value: "return_3y", label: "3Y Return" },
-    { value: "sharpe_ratio", label: "Sharpe Ratio" },
-    { value: "std_dev", label: "Std Dev ↑" },
-    { value: "max_drawdown_pct", label: "Min Drawdown" },
-    { value: "aum_cr", label: "AUM" },
-    { value: "expense_ratio", label: "Exp. Ratio ↑" },
-]; 
+const CATEGORIES = ["Large Cap Fund", "Mid Cap Fund", "Small Cap Fund", "Flexi Cap Fund", "Index Fund"];
 
 export default function FundScreener() {
-    const [filters, setFilters] = useState<any>({
-        sortBy: "return_3y", sortDir: "desc", limit: 30,
-    }); 
+    const [filters, setFilters] = useState<any>({ sortBy: "return_3y", category: ["Large Cap Fund"] });
     const [results, setResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    
+    // Selection State
+    const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
+
+    const toggleFund = (code: string) => {
+        setSelectedCodes(prev => 
+            prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+        );
+    };
 
     const run = useCallback(async () => {
         setLoading(true);
         try {
-            // Updated to use the selected category instead of hardcoded "Index"
-            const categoryQuery = filters.category ? filters.category[0] : "Large Cap";
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/funds/search?q=${categoryQuery}`); 
-            
-            if (!res.ok) throw new Error("Network response was not ok");
-            
+            const categoryQuery = filters.category[0];
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/funds/search?q=${categoryQuery}`);
             const data = await res.json();
             setResults(data);
         } catch (error) {
-            console.error("Failing to fetch funds:", error);
-            alert("Connection to backend failed. Please ensure the backend is deployed and running.");
+            console.error(error);
         } finally {
             setLoading(false);
         }
-    }, [filters]); 
+    }, [filters]);
 
-    // ... (rest of the component)
-
-    {/* Inside your <tbody> */}
-    {results.map((f: any) => (
-        <tr key={f.scheme_code} style={{ borderBottom: "1px solid #eaeaea" }}>
-            <td style={{ padding: 8 }}>
-                <a href={`/fund/${f.scheme_code}`} style={{ color: "#378ADD", textDecoration: "none", fontWeight: 500 }}>
-                    {f.scheme_name}
-                </a>
-            </td>
-            {/* Note: Updated to match Supabase column name 'amc_name' */}
-            <td style={{ padding: 8, color: "gray" }}>{f.amc_name || "N/A"}</td>
-        </tr>
-    ))}
-
-    const set = (key: string, val: any) => setFilters((prev: any) => ({ ...prev, [key]: val })); 
+    const set = (key: string, val: any) => setFilters((prev: any) => ({ ...prev, [key]: val }));
 
     return (
-        <div>
-            {/* Filters Section */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 16 }}>
-                <div>
-                    <label style={{ fontSize: 11, color: "gray", display: "block", marginBottom: 4 }}>Category</label>
-                    <select style={{ padding: "6px 10px", width: "100%", borderRadius: 7 }} onChange={e => set("category", [e.target.value])}>
-                        {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+        <div className="space-y-8 animate-in fade-in duration-700">
+            {/* Dark Mode Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 rounded-2xl bg-card/50 border border-border electric-glow">
+                <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Market Segment</label>
+                    <select 
+                        className="w-full bg-background border border-border rounded-lg p-2 text-sm focus:ring-2 ring-primary/50 outline-none transition-all"
+                        onChange={e => set("category", [e.target.value])}
+                    >
+                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
-                </div> 
-                
-                <div>
-                    <label style={{ fontSize: 11, color: "gray", display: "block", marginBottom: 4 }}>Sort by</label>
-                    <select style={{ padding: "6px 10px", width: "100%", borderRadius: 7 }} onChange={e => set("sortBy", e.target.value)}>
-                        {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                </div> 
+                </div>
 
-                <div style={{ display: "flex", alignItems: "flex-end" }}>
-                    <button onClick={run} disabled={loading} style={{ background: loading ? "gray" : "#378ADD", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", cursor: loading ? "default" : "pointer", width: "100%" }}>
-                        {loading ? "Scanning..." : "Screen funds"}
+                <div className="flex items-end">
+                    <button 
+                        onClick={run} 
+                        disabled={loading}
+                        className="w-full h-10 bg-primary text-primary-foreground font-bold rounded-lg hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                    >
+                        {loading ? <span className="animate-pulse">Analyzing...</span> : <><Search size={16}/> Screen Market</>}
                     </button>
-                </div> 
+                </div>
             </div>
 
-            {/* Results Table */}
-            <div style={{ overflowX: "auto", marginTop: 24 }}>
-                <table style={{ width: "100%", fontSize: 14, borderCollapse: "collapse", textAlign: "left" }}>
-                    <thead>
-                        <tr style={{ borderBottom: "1px solid #eaeaea" }}>
-                            <th style={{ padding: 8 }}>Fund Name</th>
-                            <th style={{ padding: 8 }}>AMC</th>
+            {/* Electric Table */}
+            <div className="rounded-2xl border border-border bg-card/30 backdrop-blur-sm overflow-hidden">
+                <table className="w-full text-sm text-left">
+                    <thead className="bg-muted/30 text-muted-foreground">
+                        <tr>
+                            <th className="p-4 w-16 text-center">Pick</th>
+                            <th className="p-4">Fund Name</th>
+                            <th className="p-4">AMC</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-border/50">
                         {results.map((f: any) => (
-                            <tr key={f.schemeCode} style={{ borderBottom: "1px solid #eaeaea" }}>
-                                <td style={{ padding: 8 }}>
-                                    <a href={`/fund/${f.schemeCode}`} style={{ color: "#378ADD", textDecoration: "none", fontWeight: 500 }}>
-                                        {f.schemeName}
-                                    </a>
+                            <tr key={f.scheme_code} className="group hover:bg-primary/5 transition-colors">
+                                <td className="p-4 text-center">
+                                    <button 
+                                        onClick={() => toggleFund(f.scheme_code)}
+                                        className={`w-5 h-5 mx-auto rounded border transition-all flex items-center justify-center ${
+                                            selectedCodes.includes(f.scheme_code) 
+                                            ? "bg-primary border-primary shadow-[0_0_10px_rgba(56,189,248,0.5)]" 
+                                            : "border-muted group-hover:border-primary/50"
+                                        }`}
+                                    >
+                                        {selectedCodes.includes(f.scheme_code) && <Check size={12} className="text-background stroke-[4px]" />}
+                                    </button>
                                 </td>
-                                <td style={{ padding: 8, color: "gray" }}>{f.schemeCategory}</td>
+                                <td className="p-4 font-semibold text-primary/90 group-hover:text-primary transition-colors">
+                                    {f.scheme_name}
+                                </td>
+                                <td className="p-4 text-muted-foreground">{f.amc_name || "N/A"}</td>
                             </tr>
                         ))}
                     </tbody>
-                </table> 
+                </table>
             </div>
+
+            {/* Floating Action Button */}
+            {selectedCodes.length > 0 && (
+                <div className="fixed bottom-12 right-12 animate-in slide-in-from-bottom-10 duration-500">
+                    <button 
+                        onClick={() => window.location.href = `/portfolio?codes=${selectedCodes.join(',')}`}
+                        className="group flex items-center gap-3 bg-primary text-primary-foreground px-8 py-4 rounded-full font-black text-sm tracking-tighter uppercase shadow-2xl shadow-primary/40 hover:scale-105 transition-all"
+                    >
+                        Optimize {selectedCodes.length} Funds <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
